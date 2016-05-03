@@ -10,8 +10,7 @@ module.exports = function (action, component, app) {
         }).then(function (result) {
             if (key != 'google_analytics')
                 return null;
-            else
-                return result.data;
+            return result.data;
         }).catch(function (err) {
             return null;
         });

@@ -1,0 +1,21 @@
+{
+  "information": {
+    "theme_name": "Intimate",
+    "theme_uri": "https://graygrids.com/item/intimate-free-personal-blog-and-portfolio-bootstrap-template/",
+    "author": "SHAPEBOOTSTRAP",
+    "author_email": "support@shapebootstrap.net",
+    "version": "1.0",
+    "description": "Free Responsive Business HTML Template",
+    "tag": "bootstrap, corporate, html, responsive, corlate"
+  },
+  "sidebars": [
+    {
+      "name": "right-sidebar",
+      "title": "Right sidebar"
+    },
+    {
+      "name": "main-menu",
+      "title": "Main nenu"
+    }
+  ]
+}

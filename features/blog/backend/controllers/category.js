@@ -61,42 +61,46 @@ module.exports = function (controller, component, app) {
 
         // Config columns
         let filter = ArrowHelper.createFilter(req, res, tableStructure, {
-            rootLink: baseRoute + 'page/$page/sort',
+            rootLink: `${baseRoute}page/${page}/sort`,
             limit: itemOfPage,
             customCondition: " AND type='post'",
             backLink: 'category_back_link'
         });
 
-        app.feature.category.actions.findAndCountAll({
-            where: filter.conditions,
-            order: filter.order,
-            limit: filter.limit,
-            offset: filter.offset
-        }).then(function (results) {
-            let totalPage = Math.ceil(results.count / itemOfPage);
+        Promise.coroutine(function*() {
+                let results = yield app.feature.category.actions.findAndCountAll({
+                    where: filter.conditions,
+                    order: filter.order,
+                    limit: filter.limit,
+                    offset: filter.offset
+                });
 
-            res.backend.render('category/index', {
-                title: __('m_category_backend_category_render_title'),
-                toolbar: toolbar,
-                totalPage: totalPage,
-                currentPage: page,
-                items: results.rows,
-                baseRoute: baseRoute,
-                queryString: (req.url.indexOf('?') == -1) ? '' : ('?' + req.url.split('?').pop())
-            });
-        }).catch(function (err) {
-            logger.error(err);
-            req.flash.error('Name: ' + err.name + '<br />' + 'Message: ' + err.message);
+                let totalPage = Math.ceil(results.count / itemOfPage);
 
-            // Render view if has error
-            res.backend.render('category/index', {
-                title: __('m_category_backend_category_render_title'),
-                totalPage: 1,
-                items: null,
-                currentPage: page,
-                queryString: (req.url.indexOf('?') == -1) ? '' : ('?' + req.url.split('?').pop())
+                res.backend.render('category/index', {
+                    title: __('m_category_backend_category_render_title'),
+                    toolbar: toolbar,
+                    totalPage: totalPage,
+                    currentPage: page,
+                    items: results.rows,
+                    baseRoute: baseRoute,
+                    queryString: (req.url.indexOf('?') == -1) ? '' : `?${req.url.split('?').pop()}`
+                });
+            }
+            )()
+            .catch(function (err) {
+                logger.error(err);
+                req.flash.error(`Name: ${err.name}<br />Message: ${err.message}`);
+
+                // Render view if has error
+                res.backend.render('category/index', {
+                    title: __('m_category_backend_category_render_title'),
+                    totalPage: 1,
+                    items: null,
+                    currentPage: page,
+                    queryString: (req.url.indexOf('?') == -1) ? '' : `?${req.url.split('?').pop()}`
+                });
             });
-        });
     };
 
     controller.categoryQuickCreate = function (req, res) {
@@ -106,7 +110,7 @@ module.exports = function (controller, component, app) {
         }).catch(function (err) {
             logger.error(err);
 
-            let errorMsg = 'Name: ' + err.name + '<br />' + 'Message: ' + err.message;
+            let errorMsg = `Name: ${err.name}<br />Message: ${err.message}`;
 
             if (err.name == ArrowHelper.UNIQUE_ERROR) {
                 errorMsg = 'A category with the name provided already exists';
@@ -132,30 +136,32 @@ module.exports = function (controller, component, app) {
     controller.categorySave = function (req, res, next) {
         let data = req.body;
 
-        app.feature.category.actions.create(data, 'post').then(function (category) {
-            req.flash.success(__('m_category_backend_category_flash_save_success'));
-            res.redirect(baseRoute + category.dataValues.id);
-        }).catch(function (err) {
-            logger.error(err);
+        Promise.coroutine(function*() {
+                let category = yield app.feature.category.actions.create(data, 'post');
+                req.flash.success(__('m_category_backend_category_flash_save_success'));
+                res.redirect(baseRoute + category.dataValues.id);
+            })()
+            .catch(function (err) {
+                logger.error(err);
 
-            let errorMsg = 'Name: ' + err.name + '<br />' + 'Message: ' + err.message;
+                let errorMsg = `Name: ${err.name}<br />Message: ${err.message}`;
 
-            if (err.name == ArrowHelper.UNIQUE_ERROR) {
-                for (let i in err.errors) {
-                    data[err.errors[i].path] = '';
+                if (err.name == ArrowHelper.UNIQUE_ERROR) {
+                    for (let e of err.errors) {
+                        data[e.path] = '';
+                    }
+
+                    if (err.fields.name)
+                        errorMsg = 'A category with the name provided already exists';
+                    else
+                        errorMsg = 'A category with the alias provided already exists';
                 }
 
-                if (err.fields.name)
-                    errorMsg = 'A category with the name provided already exists';
-                else
-                    errorMsg = 'A category with the alias provided already exists';
-            }
+                req.flash.error(errorMsg);
 
-            req.flash.error(errorMsg);
-
-            res.locals.category = data;
-            next();
-        });
+                res.locals.category = data;
+                next();
+            });
     };
 
     controller.categoryView = function (req, res) {
@@ -163,17 +169,19 @@ module.exports = function (controller, component, app) {
         toolbar.addBackButton(req, 'category_back_link');
         toolbar.addSaveButton();
 
-        app.feature.category.actions.findById(req.params.categoryId).then(function (category) {
-            res.backend.render('category/new', {
-                title: 'Edit category',
-                toolbar: toolbar.render(),
-                category: category.dataValues
-            });
-        }).catch(function (err) {
-            logger.error(err);
-            req.flash.error('Name: ' + err.name + '<br />' + 'Message: ' + err.message);
-            res.redirect(baseRoute);
-        })
+        Promise.coroutine(function*() {
+                let category = yield app.feature.category.actions.findById(req.params.categoryId);
+                res.backend.render('category/new', {
+                    title: 'Edit category',
+                    toolbar: toolbar.render(),
+                    category: category.dataValues
+                });
+            })()
+            .catch(function (err) {
+                logger.error(err);
+                req.flash.error(`Name: ${err.name}<br />Message: ${err.message}`);
+                res.redirect(baseRoute);
+            })
     };
 
     controller.categoryUpdate = function (req, res, next) {
@@ -181,71 +189,72 @@ module.exports = function (controller, component, app) {
         let data = req.body;
         let oldCategory;
 
-        app.feature.category.actions.find({
-            where: {
-                id: categoryId
-            }
-        }).then(function (category) {
-            oldCategory = category;
-            return app.feature.category.actions.update(category, data);
-        }).then(function () {
-            req.flash.success(__('m_category_backend_category_update_success'));
-            res.redirect(baseRoute + categoryId);
-        }).catch(function (err) {
-            logger.error(err);
+        Promise.coroutine(function*() {
+                let category = yield app.feature.category.actions.find({
+                    where: {
+                        id: categoryId
+                    }
+                });
+                oldCategory = category;
+                yield app.feature.category.actions.update(category, data);
+                req.flash.success(__('m_category_backend_category_update_success'));
+                res.redirect(baseRoute + categoryId);
+            })()
+            .catch(function (err) {
+                logger.error(err);
 
-            let errorMsg = 'Name: ' + err.name + '<br />' + 'Message: ' + err.message;
+                let errorMsg = `Name: ${err.name}<br />Message: ${err.message}`;
 
-            if (err.name == ArrowHelper.UNIQUE_ERROR) {
-                for (let i in err.errors) {
-                    if (oldCategory && oldCategory._previousDataValues)
-                        data[err.errors[i].path] = oldCategory._previousDataValues[err.errors[i].path];
+                if (err.name == ArrowHelper.UNIQUE_ERROR) {
+                    for (let e of err.errors) {
+                        if (oldCategory && oldCategory._previousDataValues)
+                            data[e.path] = oldCategory._previousDataValues[e.path];
+                        else
+                            data[e.path] = '';
+                    }
+
+                    if (err.fields.name)
+                        errorMsg = 'A category with the name provided already exists';
                     else
-                        data[err.errors[i].path] = '';
+                        errorMsg = 'A category with the alias provided already exists';
                 }
 
-                if (err.fields.name)
-                    errorMsg = 'A category with the name provided already exists';
-                else
-                    errorMsg = 'A category with the alias provided already exists';
-            }
+                req.flash.error(errorMsg);
 
-            req.flash.error(errorMsg);
-
-            res.locals.category = data;
-            next();
-        })
+                res.locals.category = data;
+                next();
+            })
     };
 
     controller.categoryDelete = function (req, res) {
         let listId = req.body.ids.split(',');
         let blogAction = app.feature.blog.actions;
-
         Promise.all([
             // Update posts have categories was deleted
             Promise.map(listId, function (id) {
-                return blogAction.findAndCountAll({
-                    where: {
-                        categories: {
-                            $like: '%:' + id + ':%'
+                return Promise.coroutine(function*() {
+                    let posts = yield blogAction.findAndCountAll({
+                        where: {
+                            categories: {
+                                $like: `%:${id}:%`
+                            }
                         }
-                    }
-                }).then(function (posts) {
+                    });
                     if (posts.count > 0) {
                         return Promise.map(posts.rows, function (post) {
                             let oldCategory = post.categories;
                             let newCategory = '';
 
                             // If the post has multiple categories, remove deleted category from string
-                            if (oldCategory != (':' + id + ':'))
-                                newCategory = oldCategory.replace(':' + id + ':', ':');
+                            if (oldCategory != (`:${id}:`))
+                                newCategory = oldCategory.replace(`:${id}:`, ':');
 
                             return blogAction.update(post, {categories: newCategory});
                         });
                     } else {
                         return null;
                     }
-                });
+                })();
             }),
             // Delete categories
             app.feature.category.actions.destroy(listId)

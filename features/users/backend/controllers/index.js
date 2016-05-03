@@ -37,27 +37,26 @@ module.exports = function (controller, component, app) {
 
     function updateCache(userId) {
         let key = redisPrefix + 'current-user-' + userId;
-        redis.del(key, function (err, reply) {
-            if (!err)
-                return app.feature.users.actions.findWithRole({
-                    id: userId,
-                    user_status: 'publish'
-                }).then(function (user) {
-                    if (user) {
-                        let user_tmp = {id: 0};
+        Promise.coroutine(function*() {
+            yield Promise.resolve(redis.del(key));
+            let user = yield app.feature.users.actions.findWithRole({
+                id: userId,
+                user_status: 'publish'
+            });
+            if (user) {
+                let user_tmp = {id: 0};
 
-                        try {
-                            user_tmp = JSON.parse(JSON.stringify(user));
-                            user_tmp.acl = JSON.parse(user_tmp.role.permissions);
-                        } catch (err) {
-                            user_tmp.acl = {};
-                        }
+                try {
+                    user_tmp = JSON.parse(JSON.stringify(user));
+                    user_tmp.acl = JSON.parse(user_tmp.role.permissions);
+                } catch (err) {
+                    user_tmp.acl = {};
+                }
 
-                        redis.setex(key, 300, JSON.stringify(user_tmp));
-                    }
-                }).catch(function (error) {
-                    logger.error(error);
-                });
+                redis.setex(key, 300, JSON.stringify(user_tmp));
+            }
+        })().catch(function (error) {
+            logger.error(error);
         });
     }
 
@@ -139,19 +138,20 @@ module.exports = function (controller, component, app) {
             backLink: 'user_back_link'
         });
 
-        // List users
-        app.feature.users.actions.findAndCountAll({
-            attributes: filter.attributes,
-            include: [
-                {
-                    model: app.models.role
-                }
-            ],
-            order: filter.order,
-            limit: filter.limit,
-            offset: filter.offset,
-            where: filter.conditions
-        }).then(function (results) {
+        Promise.coroutine(function*() {
+            // List users
+            let results = yield app.feature.users.actions.findAndCountAll({
+                attributes: filter.attributes,
+                include: [
+                    {
+                        model: app.models.role
+                    }
+                ],
+                order: filter.order,
+                limit: filter.limit,
+                offset: filter.offset,
+                where: filter.conditions
+            });
             let totalPage = Math.ceil(results.count / itemOfPage);
 
             res.backend.render('index', {
@@ -161,9 +161,9 @@ module.exports = function (controller, component, app) {
                 toolbar: toolbar,
                 queryString: (req.url.indexOf('?') == -1) ? '' : ('?' + req.url.split('?').pop())
             });
-        }).catch(function (error) {
+        })().catch(function (error) {
             logger.error(error);
-            req.flash.error('Name: ' + error.name + '<br />' + 'Message: ' + error.message);
+            req.flash.error(`Name: ${error.name}<br />Message: ${error.message}`);
             res.backend.render('index', {
                 title: __('m_users_backend_controllers_index_list'),
                 totalPage: 1,
@@ -179,18 +179,20 @@ module.exports = function (controller, component, app) {
         toolbar.addSaveButton(isAllow(req, 'index'));
         toolbar = toolbar.render();
 
-        // Get list roles
-        app.feature.roles.actions.findAll({
-            order: "id ASC"
-        }).then(function (roles) {
+        Promise.coroutine(function*() {
+            // Get list roles
+            let roles = yield app.feature.roles.actions.findAll({
+                order: "id ASC"
+            });
+
             res.backend.render(view_template, {
                 title: __('m_users_backend_controllers_index_add_user'),
                 roles: roles,
                 toolbar: toolbar
             });
-        }).catch(function (error) {
+        })().catch(function (error) {
             logger.error(error);
-            req.flash.error('Name: ' + error.name + '<br />' + 'Message: ' + error.message);
+            req.flash.error(`Name: ${error.name}<br />Message: ${error.message}`);
             res.backend.render(view_template, {
                 title: __('m_users_backend_controllers_index_add_user'),
                 roles: null,
@@ -211,18 +213,19 @@ module.exports = function (controller, component, app) {
         // Set role equal first role in role_ids
         data.role_id = [].concat(data.role_ids)[0];
 
-        app.feature.users.actions.create(data).then(function (user) {
+        Promise.coroutine(function*() {
+            let user = yield app.feature.users.actions.create(data);
+
             // Update avatar
-            return updateImage(data.base64, user).then(function () {
-                req.flash.success(__('m_users_backend_controllers_index_add_flash_success'));
-                res.redirect(baseRoute + user.id);
-            });
-        }).catch(function (error) {
+            yield updateImage(data.base64, user);
+            req.flash.success(__('m_users_backend_controllers_index_add_flash_success'));
+            res.redirect(baseRoute + user.id);
+        })().catch(function (error) {
             if (error.name == ArrowHelper.UNIQUE_ERROR) {
                 req.flash.error(__('m_users_backend_controllers_index_flash_email_exist'));
                 return next();
             } else {
-                req.flash.error('Name: ' + error.name + '<br />' + 'Message: ' + error.message);
+                req.flash.error(`Name: ${error.name}<br />Message: ${error.message}`);
                 return next();
             }
         });
@@ -236,8 +239,9 @@ module.exports = function (controller, component, app) {
         toolbar.addDeleteButton(isAllow(req, 'delete'));
         toolbar = toolbar.render();
 
-        // Get user by session and list roles
-        app.feature.roles.actions.findAll().then(function (roles) {
+        Promise.coroutine(function*() {
+            // Get user by session and list roles
+            let roles = yield app.feature.roles.actions.findAll();
             res.backend.render(view_template, {
                 title: __('m_users_backend_controllers_index_update'),
                 roles: roles,
@@ -245,9 +249,9 @@ module.exports = function (controller, component, app) {
                 id: req.params.uid,
                 toolbar: toolbar
             });
-        }).catch(function (error) {
+        })().catch(function (error) {
             logger.error(error);
-            req.flash.error('Name: ' + error.name + '<br />' + 'Message: ' + error.message);
+            req.flash.error(`Name: ${error.name}<br />Message: ${error.message}`);
             res.backend.render(view_template, {
                 title: __('m_users_backend_controllers_index_update'),
                 roles: null,
@@ -268,22 +272,22 @@ module.exports = function (controller, component, app) {
         else if (!edit_user.role_ids && data.role_ids)  // If user does not have a role, set role_id equal to first role in role_ids
             data.role_id = [].concat(data.role_ids)[0];
 
-        return userAction.update(edit_user, data).then(function (user) {
+        return Promise.coroutine(function*() {
+            let user = yield userAction.update(edit_user, data);
             // Update avatar
-            return updateImage(data.base64, user).then(function () {
-                // Update cache
-                updateCache(user.id);
+            yield updateImage(data.base64, user);
+            // Update cache
+            updateCache(user.id);
 
-                req.flash.success(__('m_users_backend_controllers_index_update_flash_success'));
-                return res.redirect('/' + adminPrefix + '/users/' + req.params.uid);
-            });
-        }).catch(function (error) {
+            req.flash.success(__('m_users_backend_controllers_index_update_flash_success'));
+            return res.redirect('/' + adminPrefix + '/users/' + req.params.uid);
+        })().catch(function (error) {
             logger.error(error);
             if (error.name == ArrowHelper.UNIQUE_ERROR) {
                 req.flash.error(__('m_users_backend_controllers_index_flash_email_exist'));
                 return next();
             } else {
-                req.flash.error('Name: ' + error.name + '<br />' + 'Message: ' + error.message);
+                req.flash.error(`Name: ${error.name}<br />Message: ${error.message}`);
                 return next();
             }
         });
@@ -297,33 +301,35 @@ module.exports = function (controller, component, app) {
         let userActions = app.feature.users.actions;
 
         if (index == -1) {
-            userActions.find({
-                where: {
-                    id: {
-                        $in: ids
+            Promise.coroutine(function*() {
+                let user = yield userActions.find({
+                    where: {
+                        id: {
+                            $in: ids
+                        }
                     }
-                }
-            }).then(function (user) {
-                // Delete user
-                userActions.destroy(ids).then(function () {
-                    // Delete user avatar
-                    fs.unlink(__base + 'upload' + folder_upload + user.id + '.png', function (err) {
-                        if (err)
-                            logger.error(err);
-                    });
-
-                    req.flash.success(__('m_users_backend_controllers_index_delete_flash_success'));
-                    res.sendStatus(204);
-                }).catch(function (error) {
-                    req.flash.error('Name: ' + error.name + '<br />' + 'Message: ' + error.message);
-                    res.sendStatus(200);
                 });
+                // Delete user
+                yield userActions.destroy(ids);
+
+                // Delete user avatar
+                fs.unlink(__base + 'upload' + folder_upload + user.id + '.png', function (err) {
+                    if (err)
+                        logger.error(err);
+                });
+
+                req.flash.success(__('m_users_backend_controllers_index_delete_flash_success'));
+                res.sendStatus(204);
+            })().catch(function (error) {
+                req.flash.error(`Name: ${error.name}<br />Message: ${error.message}`);
+                res.sendStatus(200);
             });
         } else {
             req.flash.error('Cannot delete yourself');
             res.sendStatus(200);
         }
-    };
+    }
+    ;
 
     controller.profile = function (req, res) {
         // Get current user role
@@ -340,19 +346,20 @@ module.exports = function (controller, component, app) {
         toolbar.addSaveButton();
         toolbar = toolbar.render();
 
-        app.feature.roles.actions.findAll({
-            where: {
-                id: {
-                    $in: role_ids
+        Promise.coroutine(function*() {
+            let roles = yield app.feature.roles.actions.findAll({
+                where: {
+                    id: {
+                        $in: role_ids
+                    }
                 }
-            }
-        }).then(function (roles) {
+            });
             res.backend.render(view_template, {
                 item: req.user,
                 toolbar: toolbar,
                 role_ids: roles
             });
-        }).catch(function (err) {
+        })().catch(function (error) {
             logger.error(error);
             res.backend.render(view_template, {
                 item: req.user,
@@ -366,27 +373,26 @@ module.exports = function (controller, component, app) {
         let userAction = app.feature.users.actions;
         let data = req.body;
 
-        userAction.findById(req.user.id).then(function (user) {
+        Promise.coroutine(function*() {
+            let user = yield userAction.findById(req.user.id);
             // Don't allow change role_ids and email
             if (data.role_ids !== undefined) delete data.role_ids;
             if (data.email !== undefined) delete data.email;
 
-            return userAction.update(user, data).then(function (result) {
-                return updateImage(data.base64, user).then(function () {
-                    // Update cache
-                    updateCache(result.id);
+            let result = yield userAction.update(user, data);
+            yield updateImage(data.base64, user);
+            // Update cache
+            updateCache(result.id);
 
-                    req.flash.success(__('m_users_backend_controllers_index_update_profile_flash_success'));
-                    return res.redirect('/' + adminPrefix + '/users/profile');
-                });
-            });
-        }).catch(function (error) {
+            req.flash.success(__('m_users_backend_controllers_index_update_profile_flash_success'));
+            return res.redirect(`/${adminPrefix}/users/profile`);
+        })().catch(function (error) {
             logger.error(error);
             if (error.name == ArrowHelper.UNIQUE_ERROR) {
                 req.flash.error(__('m_users_backend_controllers_index_flash_email_exist'));
                 return next();
             } else {
-                req.flash.error('Name: ' + error.name + '<br />' + 'Message: ' + error.message);
+                req.flash.error(`Name: ${error.name}<br />Message: ${error.message}`);
                 return next();
             }
         });
@@ -429,26 +435,27 @@ module.exports = function (controller, component, app) {
         let old_pass = req.body.old_pass.trim();
         let user_pass = req.body.user_pass.trim();
 
-        app.feature.users.actions.findById(req.user.id).then(function (user) {
+        Promise.coroutine(function*() {
+            let user = yield app.feature.users.actions.findById(req.user.id);
+
             if (user.authenticate(old_pass)) {
-                user.updateAttributes({
+                yield user.updateAttributes({
                     user_pass: user.hashPassword(user_pass)
-                }).then(function () {
-                    req.flash.success(__('m_users_backend_controllers_index_update_pass_flash_success'));
-                }).catch(function (error) {
-                    req.flash.error('Name: ' + error.name + '<br />' + 'Message: ' + error.message);
-                }).finally(function () {
-                    res.backend.render('change-pass', {toolbar: toolbar});
                 });
+                req.flash.success(__('m_users_backend_controllers_index_update_pass_flash_success'));
             } else {
                 req.flash.error(__('m_users_backend_controllers_index_update_pass_flash_error'));
-                res.backend.render('change-pass', {toolbar: toolbar});
             }
+        })().catch(function (error) {
+            req.flash.error(`Name: ${error.name}<br />Message: ${error.message}`);
+        }).finally(function () {
+            res.backend.render('change-pass', {toolbar: toolbar});
         });
     };
 
     controller.userById = function (req, res, next, id) {
-        app.feature.users.actions.findWithRole({id: id}).then(function (user) {
+        Promise.coroutine(function*() {
+            let user = yield app.feature.users.actions.findWithRole({id: id});
             if (user) {
                 req._user = user;
                 next();
@@ -456,7 +463,7 @@ module.exports = function (controller, component, app) {
                 req.flash.error('User is not exists');
                 res.redirect(baseRoute);
             }
-        }).catch(function (err) {
+        })().catch(function (err) {
             req.flash.error(err.name + ': ' + err.message);
             res.redirect(baseRoute);
         });

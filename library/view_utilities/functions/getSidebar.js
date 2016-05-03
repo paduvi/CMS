@@ -2,6 +2,7 @@
 
 let _ = require('arrowjs')._;
 let log = require('arrowjs').logger;
+let Promise = require('arrowjs').Promise;
 
 module.exports = {
 
@@ -16,18 +17,19 @@ module.exports = {
     handler: function (sidebarName, callback) {
         let app = this;
 
-        // Find all widgets in the sidebar
-        app.models.widget.findAll({
-            where: {
-                sidebar: sidebarName
-            },
-            order: ['ordering'],
-            raw: true
-        }).then(function (widgets) {
+        Promise.coroutine(function*() {
+            // Find all widgets in the sidebar
+            let widgets = yield app.models.widget.findAll({
+                where: {
+                    sidebar: sidebarName
+                },
+                order: ['ordering'],
+                raw: true
+            });
+
             // Check the sidebar has widget
             if (widgets && widgets.length) {
                 let html = '';
-                let resolve = Promise.resolve();
 
                 widgets.map(function (widgetData) {
                     // Get widget by type
@@ -35,24 +37,20 @@ module.exports = {
 
                     if (widget) {
                         // Get content of each widget in the sidebar
-                        resolve = resolve.then(function () {
-                            return widget.controllers.renderWidget(widgetData)
-                        }).then(function (view) {
-                            return html += view;
-                        }).catch(function (err) {
+                        yield Promise.coroutine(function*() {
+                            let view = yield widget.controllers.renderWidget(widgetData);
+                            html += view;
+                        })().catch(function (err) {
                             log.error(err);
                         });
                     }
                 });
 
-                // Return content of the sidebar
-                resolve.then(function () {
-                    callback(null, html);
-                });
+                callback(null, html);
             } else {
                 callback(null, '');
             }
-        }).catch(function (err) {
+        })().catch(function (err) {
             log.error(err);
         });
     }

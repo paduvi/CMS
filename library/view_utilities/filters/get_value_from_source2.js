@@ -9,9 +9,9 @@ module.exports =  {
         if (typeof(source) == "string") {
             source = JSON.parse(source);
         }
-        for (let y in source) {
-            if (value == source[y][key_compare]) {
-                return source[y][key_value];
+        for (let v of source) {
+            if (value == v[key_compare]) {
+                return v[key_value];
             }
         }
         return "";

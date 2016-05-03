@@ -81,14 +81,14 @@ module.exports = function (controller, component, application) {
                     });
                 });
             }).catch(function (err) {
-                req.flash.error('Cannot parse "theme.json" file');
+            req.flash.error('Cannot parse "theme.json" file');
 
-                res.render('sidebars', {
-                    widgets: widgets,
-                    sidebars: null,
-                    title: 'Widgets Manager'
-                });
+            res.render('sidebars', {
+                widgets: widgets,
+                sidebars: null,
+                title: 'Widgets Manager'
             });
+        });
     };
 
     /**
@@ -119,6 +119,7 @@ module.exports = function (controller, component, application) {
         let data = req.body;
         let mainAttributes = ['id', 'widget_name', 'sidebar', 'ordering'];
         let optionAttributes = {};
+
         for (let i in data) {
             if (data.hasOwnProperty(i) && mainAttributes.indexOf(i) == -1) {
                 optionAttributes[i] = data[i];
@@ -129,23 +130,24 @@ module.exports = function (controller, component, application) {
 
         // Save widget depend on data.id
         if (data.id && parseInt(data.id) && parseInt(data.id) > 0) {
-            // Update widget
-            widgetModel.findById(data.id).then(function (widget) {
-                return widget.updateAttributes(data);
-            }).then(function (widget) {
+            Promise.coroutine(function*() {
+                // Update widget
+                let widget = yield widgetModel.findById(data.id);
+                widget = yield widget.updateAttributes(data);
                 // Return string ID
                 res.send(widget.dataValues.id + '');
-            }).catch(function (error) {
+            })().catch(function (error) {
                 res.send(error);
             })
         } else {
             delete data.id;
 
-            // Create new widget
-            widgetModel.create(data).then(function (widget) {
+            Promise.coroutine(function*() {
+                // Create new widget
+                let widget = yield widgetModel.create(data);
                 // Return string ID
                 res.send(widget.dataValues.id + '');
-            }).catch(function (error) {
+            })().catch(function (error) {
                 res.send(error);
             })
         }
@@ -160,8 +162,8 @@ module.exports = function (controller, component, application) {
         let index = 1;
         let promises = [];
 
-        for (let i in ids) {
-            if (ids[i] == '') {
+        for (let id of ids) {
+            if (id == '') {
                 index++;
                 continue;
             }
@@ -169,7 +171,7 @@ module.exports = function (controller, component, application) {
             promises.push(
                 // Update sidebar, ordering of widget
                 application.models.rawQuery("UPDATE " + widgetModel.getTableName() + " SET ordering=?, sidebar=? WHERE id=?", {
-                    replacements: [index++, sidebar, ids[i]]
+                    replacements: [index++, sidebar, id]
                 })
             );
         }
@@ -185,15 +187,16 @@ module.exports = function (controller, component, application) {
      * Delete widget from sidebar
      */
     controller.deleteWidget = function (req, res) {
-        // Delete widget by id
-        widgetModel.destroy({
-            where: {
-                id: req.body.id
-            }
-        }).then(function (count) {
+        Promise.coroutine(function*() {
+            // Delete widget by id
+            let count = yield widgetModel.destroy({
+                where: {
+                    id: req.body.id
+                }
+            });
             // Return number of deleted records (string)
             res.send(count + '');
-        }).catch(function (err) {
+        })().catch(function (err) {
             res.send(err);
         });
     }

@@ -15,37 +15,34 @@ exports.createUserAdmin = function (app, callback) {
         callback(null);
     }
 
-    app.models.user.count().then(function (count) {
+    Promise.coroutine(function*() {
+        let count = yield app.models.user.count();
+
         if (count < 1) {
-            app.models.role.findAndCountAll({
+            let result = yield app.models.role.findAndCountAll({
                 limit: 1,
                 order: 'id DESC'
-            }).then(function (result) {
-                if (result.count < 1) {
-                    app.models.role.create({
-                        name: 'Admin',
-                        status: 'publish',
-                        permissions: permissions
-                    }).then(function (role) {
-                        createUser(app, role.id, function (user) {
-                            callback(user, role);
-                        });
-                    }).catch(function (err) {
-                        callback(null);
-                    })
-                } else {
-                    createUser(app, result.rows[0].id, function (user) {
-                        callback(user);
-                    });
-                }
-            }).catch(function (err) {
-                logger.error('Error At CreateUserAdmin in ArrowHelper function : ', err);
-                callback(null);
             });
+
+            if (result.count < 1) {
+                let role = yield app.models.role.create({
+                    name: 'Admin',
+                    status: 'publish',
+                    permissions: permissions
+                });
+                createUser(app, role.id, function (user) {
+                    callback(user, role);
+                });
+            } else {
+                createUser(app, result.rows[0].id, function (user) {
+                    callback(user);
+                });
+            }
         } else {
             callback(null);
         }
-    }).catch(function (err) {
+    })().catch(function (err) {
+        logger.error('Error At CreateUserAdmin in ArrowHelper function : ', err);
         callback(null);
     });
 };
@@ -53,18 +50,19 @@ exports.createUserAdmin = function (app, callback) {
 function createUser(app, role_id, callback) {
     if (role_id < 1)
         callback(null);
-    app.models.user.create({
-        user_pass: '123456',
-        user_email: 'admin@example.com',
-        user_url: 'https://facebook.com/...',
-        user_status: 'publish',
-        display_name: 'Administrator',
-        image: '/img/admin.jpg',
-        role_id: role_id,
-        role_ids: role_id
-    }).then(function (user) {
+    Promise.coroutine(function*() {
+        let user = yield app.models.user.create({
+            user_pass: '123456',
+            user_email: 'admin@example.com',
+            user_url: 'https://facebook.com/...',
+            user_status: 'publish',
+            display_name: 'Administrator',
+            image: '/img/admin.jpg',
+            role_id: role_id,
+            role_ids: role_id
+        });
         callback(user);
-    }).catch(function (err) {
+    })().catch(function (err) {
         logger.error(err);
         callback(err);
     })

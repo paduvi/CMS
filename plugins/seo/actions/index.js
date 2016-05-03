@@ -23,12 +23,11 @@ module.exports = function (action, component, app) {
         }).then(function (result) {
             if (result) {
                 return result.updateAttributes({value: value});
-            } else {
-                return app.models.seo.create({
-                    key: key,
-                    value: value
-                });
             }
+            return app.models.seo.create({
+                key: key,
+                value: value
+            });
         }).catch(function () {
             return null;
         });

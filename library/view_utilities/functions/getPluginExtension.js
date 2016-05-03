@@ -11,13 +11,14 @@ module.exports = {
     handler: function (key, callback) {
         let app = this;
         if (key) {
-            app.models.plugin.findAll({
-                where: {
-                    active: true
-                },
-                order: "ordering ASC",
-                raw: true
-            }).then(function (plugins) {
+            Promise.coroutine(function*() {
+                let plugins = yield app.models.plugin.findAll({
+                    where: {
+                        active: true
+                    },
+                    order: "ordering ASC",
+                    raw: true
+                });
                 if (_.isEmpty(plugins)) {
                     callback(null, "")
                 } else {
@@ -25,7 +26,7 @@ module.exports = {
                     let body = "";
                     let jsScript = "";
 
-                    Promise.map(plugins, function (plugin) {
+                    yield Promise.map(plugins, function (plugin) {
                         let pluginName = plugin.plugin_name;
 
                         if (app.plugin[pluginName]) {
@@ -34,7 +35,9 @@ module.exports = {
                             }
 
                             if (app.plugin[pluginName].actions.getData) {
-                                return app.plugin[pluginName].actions.getData(key).then(function (result) {
+                                return Promise.coroutine(function*() {
+                                    let result = yield app.plugin[pluginName].actions.getData(key);
+
                                     if (result) {
                                         if (app.plugin[pluginName].dataType === "json") {
                                             result.value = JSON.parse(result.value);
@@ -48,15 +51,15 @@ module.exports = {
                                     data[pluginName] = result.value;
                                     data.pluginName = pluginName;
 
-                                    return app.plugin[pluginName].render('extension', data).then(function (info) {
-                                        if (info) {
-                                            nav += `<li>
+                                    let info = yield app.plugin[pluginName].render('extension', data);
+                                    if (info) {
+                                        nav += `<li>
                                                     <a href="#${pluginName}" data-toggle="tab">${app.plugin[pluginName].title}</a>
                                                </li>`;
-                                            body += `<div id="${pluginName}" class="tab-pane active">${info}</div>`;
+                                        body += `<div id="${pluginName}" class="tab-pane active">${info}</div>`;
 
-                                            if (app.plugin[pluginName].onSave) {
-                                                jsScript += `
+                                        if (app.plugin[pluginName].onSave) {
+                                            jsScript += `
                                                 var ${pluginName}Element = document.getElementById("${pluginName}_form");
                                                 var ${pluginName}Data = new FormData(${pluginName}Element);
                                                 ${pluginName}Data.append('key', "${key}");
@@ -64,17 +67,16 @@ module.exports = {
                                                 ${pluginName}xhr.open('POST', '${app.plugin[pluginName].onSave}');
                                                 ${pluginName}xhr.send(${pluginName}Data);
                                             `;
-                                            }
                                         }
+                                    }
 
-                                        return null;
-                                    });
-                                });
+                                    return null;
+                                })()
                             }
                         }
-                    }).then(function () {
-                        if (body) {
-                            var raw = `<section class="col-md-12">
+                    });
+                    if (body) {
+                        var raw = `<section class="col-md-12">
                                     <div class="nav-tabs-custom">
                                             <ul class="nav nav-tabs pull-right">
                                                 ${nav}
@@ -93,17 +95,17 @@ module.exports = {
                                         ${jsScript}
                                     }
                                 </script>`;
-                            callback(null, raw);
-                        } else {
-                            callback(null, '');
-                        }
-                    });
+                        callback(null, raw);
+                    } else {
+                        callback(null, '');
+                    }
                 }
-            }).catch(function (err) {
+            })().catch(function (err) {
                 callback(null, '');
             });
         } else {
             callback(null, '');
         }
     }
-};
+}
+;

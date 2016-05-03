@@ -53,8 +53,8 @@ exports.createFilter = function (req, res, columns, options) {
 
             let value = parseValue(req.query[i], col);
             if (_.isArray(value)) {
-                for (let y in value) {
-                    values.push(value[y].trim());
+                for (let v of value) {
+                    values.push(v.trim());
                 }
             } else {
                 values.push(value.trim());

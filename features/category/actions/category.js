@@ -95,8 +95,8 @@ module.exports = function (action, component, app) {
             str = _.compact(str.split(':'));
 
             // Check elements of str must be integers
-            for (var i = 0; i < str.length; i++) {
-                if (!Number.isInteger(parseInt(str[i]))) {
+            for (let elem of str) {
+                if (!Number.isInteger(parseInt(elem))) {
                     return [];
                 }
             }

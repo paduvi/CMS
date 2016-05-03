@@ -68,8 +68,8 @@ module.exports = function (controller, component, app) {
         };
         results.push(p);
 
-        for (let i in dirs) {
-            results = getDirectories(srcpath + '/' + dirs[i], results);
+        for (let dir of dirs) {
+            results = getDirectories(srcpath + '/' + dir, results);
         }
 
         return results;

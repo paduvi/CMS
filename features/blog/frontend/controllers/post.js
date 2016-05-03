@@ -10,16 +10,17 @@ module.exports = function (controller, component, app) {
         let number_item = 10;
         let totalPage = 1;
 
-        app.feature.blog.actions.findAndCountAll({
-            include: app.models.user,
-            where: {
-                type: 'post',
-                published: 1
-            },
-            offset: (page - 1) * number_item,
-            limit: number_item,
-            order: 'id DESC'
-        }).then(function (posts) {
+        return Promise.coroutine(function*() {
+            let posts = yield app.feature.blog.actions.findAndCountAll({
+                include: app.models.user,
+                where: {
+                    type: 'post',
+                    published: 1
+                },
+                offset: (page - 1) * number_item,
+                limit: number_item,
+                order: 'id DESC'
+            });
             if (posts) {
                 totalPage = Math.ceil(parseInt(posts.count) / number_item) || 1;
                 // Render view
@@ -27,56 +28,56 @@ module.exports = function (controller, component, app) {
                     posts: posts.rows,
                     totalPage: totalPage,
                     currentPage: page,
-                    baseURL: '/blog/posts/page-{page}'
+                    baseURL: `/blog/posts/page-${page}`
                 });
             } else {
                 // Redirect to 404 if posts not exist
                 res.frontend.render('_404');
             }
-        });
+        })();
     };
 
     controller.postDetail = function (req, res) {
         let postId = req.params.postId;
 
-        app.feature.blog.actions.find({
-            where: {
-                id: postId,
-                type: 'post',
-                published: 1
-            },
-            raw: true
-        }).then(function (post) {
+        Promise.coroutine(function*() {
+            let post = yield app.feature.blog.actions.find({
+                where: {
+                    id: postId,
+                    type: 'post',
+                    published: 1
+                },
+                raw: true
+            });
             if (post) {
                 // Get id of category contain post
                 let ids = post.categories.split(':');
                 let category_ids = [];
                 if (ids.length > 0) {
-                    for (var i = 0; i < ids.length; i++) {
-                        if (Number(ids[i])) {
-                            category_ids.push(Number(ids[i]));
+                    for (let id of ids) {
+                        if (Number(id)) {
+                            category_ids.push(Number(id));
                         }
                     }
                 }
                 // Query category contain post and render
-                app.feature.category.actions.findAll({
+                let categories = yield app.feature.category.actions.findAll({
                     where: {
                         id: {
                             $in: category_ids
                         }
                     }
-                }).then(function (categories) {
-                    // Render view
-                    res.frontend.render('post', {
-                        post: post,
-                        categories: categories
-                    });
+                });
+                // Render view
+                res.frontend.render('post', {
+                    post: post,
+                    categories: categories
                 });
             } else {
                 // Redirect to 404 if post not exist
                 res.frontend.render('_404');
             }
-        });
+        })();
     };
 
     controller.listArchive = function (req, res) {
@@ -96,30 +97,31 @@ module.exports = function (controller, component, app) {
             'from arr_post as posts WHERE' +
             ' "posts"."type" = \'post\' AND "posts"."published" = 1 AND EXTRACT(MONTH FROM posts.created_at ) = ' + month_ + ' AND EXTRACT(YEAR FROM posts.created_at) = ' + year_;
 
-        app.models.rawQuery(sql).then(function (result) {
-            if (result) {
-                // Render view
-                app.models.rawQuery(sqlCount)
-                    .then(function (countPost) {
-                        let totalPage = Math.ceil(countPost[0][0].count / number_item) || 1;
+        Promise.coroutine(function*() {
+                let result = yield app.models.rawQuery(sql);
+                if (result) {
+                    // Render view
+                    let countPost = yield app.models.rawQuery(sqlCount);
 
-                        res.frontend.render('archives', {
-                            posts: result[0],
-                            archives_date: year_ + ' ' + month_,
-                            month: month_,
-                            totalPage: totalPage,
-                            currentPage: page,
-                            baseURL: '/blog/posts/archives/' + year_ + '/' + month_ + '/page-{page}'
-                        });
-                    })
-            } else {
-                // Redirect to 404 if post not exist
-                res.frontend.render('_404');
-            }
-        }).catch(function (err) {
-            res.send("error");
-            logger.error(err.stack);
-        });
+                    let totalPage = Math.ceil(countPost[0][0].count / number_item) || 1;
+
+                    res.frontend.render('archives', {
+                        posts: result[0],
+                        archives_date: `${year_} ${month_}`,
+                        month: month_,
+                        totalPage: totalPage,
+                        currentPage: page,
+                        baseURL: `/blog/posts/archives/${year_}/${month_}/page-${page}`
+                    });
+                } else {
+                    // Redirect to 404 if post not exist
+                    res.frontend.render('_404');
+                }
+            })()
+            .catch(function (err) {
+                res.send("error");
+                logger.error(err.stack);
+            });
     };
 
     controller.listByAuthor = function (req, res) {
@@ -127,41 +129,43 @@ module.exports = function (controller, component, app) {
         let number_item = app.getConfig('pagination').frontNumberItem || 10;
         let totalPage = 1;
 
-        // Find all post
-        app.feature.blog.actions.findAndCountAll({
-            include: [
-                {
-                    model: app.models.user,
-                    attributes: ['id', 'display_name', 'user_login', 'user_email', 'user_image_url']
-                }
-            ],
-            where: {
-                type: 'post',
-                created_by: req.params.author,
-                published: 1
+        Promise.coroutine(function*() {
+                // Find all post
+                let results = yield app.feature.blog.actions.findAndCountAll({
+                    include: [
+                        {
+                            model: app.models.user,
+                            attributes: ['id', 'display_name', 'user_login', 'user_email', 'user_image_url']
+                        }
+                    ],
+                    where: {
+                        type: 'post',
+                        created_by: req.params.author,
+                        published: 1
 
-            },
-            offset: (page - 1) * number_item,
-            limit: number_item,
-            order: 'id DESC'
-        }).then(function (results) {
-            if (results) {
-                totalPage = Math.ceil(parseInt(results.count) / number_item) || 1;
-
-                // Render view
-                res.frontend.render('posts', {
-                    posts: results.rows,
-                    totalPage: totalPage,
-                    currentPage: page,
-                    baseURL: '/blog/posts/' + req.params.author + '/page-{page}'
+                    },
+                    offset: (page - 1) * number_item,
+                    limit: number_item,
+                    order: 'id DESC'
                 });
-            } else {
-                // Redirect to 404 if post not exist
-                res.frontend.render('_404');
-            }
-        }).catch(function (err) {
-            logger.error(err.stack)
-        });
+                if (results) {
+                    totalPage = Math.ceil(parseInt(results.count) / number_item) || 1;
+
+                    // Render view
+                    res.frontend.render('posts', {
+                        posts: results.rows,
+                        totalPage: totalPage,
+                        currentPage: page,
+                        baseURL: `/blog/posts/${req.params.author}/page-${page}`
+                    });
+                } else {
+                    // Redirect to 404 if post not exist
+                    res.frontend.render('_404');
+                }
+            })()
+            .catch(function (err) {
+                logger.error(err.stack)
+            });
     };
 
     controller.listPostByCategory = function (req, res) {
@@ -170,43 +174,45 @@ module.exports = function (controller, component, app) {
         let alias = req.params.alias || '';
         let id = req.params.id || '';
 
-        Promise.all([
-            app.feature.blog.actions.findAndCountAll({
-                include: [
-                    {
-                        model: app.models.user,
-                        attributes: ['id', 'display_name', 'user_login', 'user_email', 'user_image_url']
-                    }
-                ],
-                where: {
-                    categories: {$like: '%:' + req.params.id + ':%'},
-                    type: 'post',
-                    published: 1
-                },
-                order: 'id ASC',
-                offset: (page - 1) * number_item,
-                limit: number_item
-            }),
-            app.feature.category.actions.findAll({order: 'id asc'})
-        ]).then(function (result) {
-            let totalPage = Math.ceil(result[0].count / number_item);
-            if (result) {
-                // Render view
-                res.frontend.render('posts', {
-                    posts: result[0].rows,
-                    numberOfPost: result[0].rows.length,
-                    totalPage: totalPage,
-                    currentPage: page,
-                    baseURL: '/blog/posts/categories/' + alias + '/' + id + '/page-:page([0-9]+)?(/)?',
-                });
-            } else {
-                // Redirect to 404 if post not exist
+        Promise.coroutine(function*() {
+                let result = yield Promise.all([
+                    app.feature.blog.actions.findAndCountAll({
+                        include: [
+                            {
+                                model: app.models.user,
+                                attributes: ['id', 'display_name', 'user_login', 'user_email', 'user_image_url']
+                            }
+                        ],
+                        where: {
+                            categories: {$like: `%:${req.params.id}:%`},
+                            type: 'post',
+                            published: 1
+                        },
+                        order: 'id ASC',
+                        offset: (page - 1) * number_item,
+                        limit: number_item
+                    }),
+                    app.feature.category.actions.findAll({order: 'id asc'})
+                ]);
+                let totalPage = Math.ceil(result[0].count / number_item);
+                if (result) {
+                    // Render view
+                    res.frontend.render('posts', {
+                        posts: result[0].rows,
+                        numberOfPost: result[0].rows.length,
+                        totalPage: totalPage,
+                        currentPage: page,
+                        baseURL: `/blog/posts/categories/${alias}/${id}/page-${page}`,
+                    });
+                } else {
+                    // Redirect to 404 if post not exist
+                    res.frontend.render('_404');
+                }
+            })()
+            .catch(function (err) {
+                logger.error(err.stack);
                 res.frontend.render('_404');
-            }
-        }).catch(function (err) {
-            logger.error(err.stack);
-            res.frontend.render('_404');
-        });
+            });
     };
 
     controller.search = function (req, res) {
@@ -215,36 +221,38 @@ module.exports = function (controller, component, app) {
         let totalPage = 1;
         let key = req.body.searchStr || req.params.searchStr || req.query.searchStr || '';
 
-        app.feature.blog.actions.findAndCountAll({
-            include: app.models.user,
-            where: {
-                $or: {
-                    title: {
-                        $ilike: '%' + key + '%'
+        Promise.coroutine(function*() {
+                let posts = yield app.feature.blog.actions.findAndCountAll({
+                    include: app.models.user,
+                    where: {
+                        $or: {
+                            title: {
+                                $ilike: `%${key}%`
+                            },
+                            intro_text: {
+                                $ilike: `%${key}%`
+                            }
+                        },
+                        type: 'post',
+                        published: 1
                     },
-                    intro_text: {
-                        $ilike: '%' + key + '%'
-                    }
-                },
-                type: 'post',
-                published: 1
-            },
-            offset: (page - 1) * number_item,
-            limit: number_item,
-            order: 'id DESC'
-        }).then(function (posts) {
-            totalPage = Math.ceil(parseInt(posts.count) / number_item) || 1;
+                    offset: (page - 1) * number_item,
+                    limit: number_item,
+                    order: 'id DESC'
+                });
+                totalPage = Math.ceil(parseInt(posts.count) / number_item) || 1;
 
-            res.frontend.render('posts', {
-                posts: posts.rows,
-                totalPage: totalPage,
-                currentPage: page,
-                baseURL: '/blog/posts/search/page/{page}/' + key
+                res.frontend.render('posts', {
+                    posts: posts.rows,
+                    totalPage: totalPage,
+                    currentPage: page,
+                    baseURL: `/blog/posts/search/page/${page}/${key}`
+                });
+                // Render view
+            })()
+            .catch(function (err) {
+                logger.error('search error : ', err);
+                res.frontend.render('_404');
             });
-            // Render view
-        }).catch(function (err) {
-            logger.error('search error : ', err);
-            res.frontend.render('_404');
-        });
     }
 };

@@ -8,10 +8,10 @@ module.exports = {
                 this.models.rawQuery(source).then(function (data) {
                     data = data[0];
                     let arr = [];
-                    for (let i in data) {
+                    for (let v of data) {
                         let ob = {};
-                        ob[filter.display_key] = data[i][filter.display_key];
-                        ob[filter.value_key] = data[i][filter.value_key];
+                        ob[filter.display_key] = v[filter.display_key];
+                        ob[filter.value_key] = v[filter.value_key];
                         arr.push(ob);
                     }
                     cb(null, arr);

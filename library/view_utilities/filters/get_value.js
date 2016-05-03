@@ -8,8 +8,8 @@ module.exports =  {
         if (~input.indexOf('.')) {
             let arr = input.split('.');
             let value = '';
-            for (let i in arr) {
-                item = (item[arr[i]] != null) ? item[arr[i]] : '';
+            for (let v of arr) {
+                item = (item[v] != null) ? item[v] : '';
                 value = item;
             }
             return value;
