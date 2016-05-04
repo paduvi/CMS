@@ -37,10 +37,11 @@ module.exports = {
 
                     if (widget) {
                         // Get content of each widget in the sidebar
-                        yield Promise.coroutine(function*() {
-                            let view = yield widget.controllers.renderWidget(widgetData);
-                            html += view;
-                        })().catch(function (err) {
+                        resolve = resolve.then(function () {
+                            return widget.controllers.renderWidget(widgetData)
+                        }).then(function (view) {
+                            return html += view;
+                        }).catch(function (err) {
                             log.error(err);
                         });
                     }
