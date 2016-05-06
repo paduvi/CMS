@@ -1,0 +1,30 @@
+<div class="arr-check-responsive no-display"></div>
+<div class="arr-left-navigation">
+    <ul class="sidebar-menu">
+        <li class="header">Documentation {{ version.name }}</li>
+
+        {% if data %}
+            {% for dat in data %}
+                <li class="treeview">
+                    <a href="javascript:void(0)">
+                        <i class="fa fa-caret-right"></i> {{ dat.title }}
+                    </a>
+
+                    {% if dat.apis|length %}
+                        <ul class="treeview-menu" style="display: none;">
+                            {% for api in dat.apis %}
+                                <li>
+                                    <a href="/documentation/{{ version.alias }}/{{ dat.alias }}/{{ api.alias }}/">
+                                        {{ api.title }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        {% endif %}
+    </ul>
+
+    <div id="read_content"></div>
+</div>

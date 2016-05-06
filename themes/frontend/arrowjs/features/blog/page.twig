@@ -1,0 +1,30 @@
+{% extends '_layout.' + getConfig('viewExtension') %}
+
+{% block content %}
+    <!--container start-->
+    <div class="container">
+        <div class="row">
+            <!--blog start-->
+            <div class="col-lg-12">
+                <div class="blog-item">
+                    <div class="row">
+                        <div class="col-lg-12 col-sm-12">
+                            {% if item.image %}
+                            <div class="blog-img gs">
+                                <img src="{{ item.image }}" alt=""/>
+                            </div>
+                            {% endif %}
+                            <h1>
+                                <a href="#">
+                                    {{ item.title |safe }}
+                                </a>
+                            </h1>
+                            <p>{{ item.full_text |safe }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

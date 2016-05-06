@@ -1,0 +1,24 @@
+{% macro render_child(mn, menu_data ,isSubMenus) %}
+    {% if mn.children.length > 0 %}
+        <li class="dropdown">
+            <a href="{{ menu_data.link }}" class="dropdown-toggle"  data-toggle="dropdown" role="button"
+               aria-expanded="false">
+                {{ menu_data.name }} <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu">
+                {% for subMn in mn.children %}
+                    {% set _data = subMn.id|get_menu_data(menuItems) %}
+                    {{ render_child(subMn, _data) }}
+                {% endfor %}
+            </ul>
+        </li>
+    {% else %}
+        <li><a href="{{ menu_data.link }}">{{ menu_data.name }}</a></li>
+    {% endif %}
+{% endmacro %}
+<ul class="nav navbar-nav navbar-right">
+    {% for mn in menuOrder %}
+        {% set menu_data = mn.id|get_menu_data(menuItems) %}
+        {{ render_child(mn, menu_data,false) }}
+    {% endfor %}
+</ul>

@@ -1,7 +1,6 @@
 'use strict';
 
 let logger = require('arrowjs').logger;
-let Promise = require('arrowjs').Promise;
 
 module.exports = function (passport, app) {
     return {
@@ -12,8 +11,7 @@ module.exports = function (passport, app) {
             let redis = app.redisClient;
             let key = app.getConfig('redis_prefix') + 'current-user-' + id;
 
-            Promise.coroutine(function*() {
-                let result = yield redis.get(key);
+            redis.get(key, function (err, result) {
                 if (result != null) {
                     let user;
                     try {
@@ -25,28 +23,29 @@ module.exports = function (passport, app) {
 
                     done(null, user);
                 } else {
-                    let user = yield app.feature.users.actions.find({
+                    app.feature.users.actions.find({
                         include: [app.models.role],
                         where: {
                             id: id,
                             user_status: 'publish'
                         }
-                    });
-                    let user_tmp;
-                    try {
-                        user_tmp = JSON.parse(JSON.stringify(user));
-                    } catch (err) {
+                    }).then(function (user) {
+                        let user_tmp;
+                        try {
+                            user_tmp = JSON.parse(JSON.stringify(user));
+                        } catch (err) {
+                            logger.error(err);
+                            done(null, false);
+                        }
+
+                        // Set expires 300 seconds
+                        redis.setex(key, 300, JSON.stringify(user_tmp));
+                        done(null, user_tmp);
+                    }).catch(function (err) {
                         logger.error(err);
                         done(null, false);
-                    }
-
-                    // Set expires 300 seconds
-                    redis.setex(key, 300, JSON.stringify(user_tmp));
-                    done(null, user_tmp);
+                    });
                 }
-            })().catch(function (err) {
-                logger.error(err);
-                done(null, false);
             });
         },
         checkAuthenticate: function (req, res, next) {

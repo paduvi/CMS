@@ -1,0 +1,29 @@
+{% extends '_layout.twig' %}
+
+{% block content %}
+    <div class="arr-top-container">
+        <div class="size-wrap">
+            {% include 'sidebar_view.twig' %}
+
+            <div class="arr-right-content">
+                <div class="arr-post-title text-center">
+                    {{ api.title|title }}
+                </div>
+
+                <div class="arr-post-content">
+                    {{ api.html|safe }}
+                </div>
+
+                {#<div class="arr-docs-navigation">#}
+                {#<a href="#" class="arr-left">← Previous</a>#}
+
+                {#<a href="#" class="arr-right">Next →</a>#}
+                {#</div>#}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block jsExtends %}
+    {% include 'sidebar_script.twig' %}
+{% endblock %}

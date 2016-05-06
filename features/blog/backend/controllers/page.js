@@ -207,7 +207,7 @@ module.exports = function (controller, component, app) {
                     data.created_by = author;
 
                     let page = yield Promise.resolve(blogAction.create(data, 'page'));
-                    page_id = post.id;
+                    page_id = page.id;
                     oldPage = page;
                 }
                 req.flash.success(__('m_blog_backend_page_flash_create_success'));

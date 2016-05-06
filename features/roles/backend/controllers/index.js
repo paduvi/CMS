@@ -5,6 +5,7 @@
 let _ = require('arrowjs')._;
 let fs = require('fs');
 let path = require('path');
+let Promise = require('arrowjs').Promise;
 
 let route = 'roles';
 
@@ -80,26 +81,25 @@ module.exports = function (controller, component, app) {
         });
 
         Promise.coroutine(function*() {
-                // List roles
-                let roles = yield app.models.role.findAll({
-                    where: filter.conditions,
-                    order: column + " " + order
-                });
-
-                res.backend.render('index', {
-                    title: __('m_roles_backend_controllers_index_findAll_title'),
-                    items: roles,
-                    toolbar: toolbar
-                });
-            })()
-            .catch(function (error) {
-                req.flash.error(`Name: ${error.name}<br />Message: ${error.message}`);
-                res.backend.render('index', {
-                    title: __('m_roles_backend_controllers_index_findAll_title'),
-                    toolbar: toolbar,
-                    roles: null
-                });
+            // List roles
+            let roles = yield app.models.role.findAll({
+                where: filter.conditions,
+                order: column + " " + order
             });
+
+            res.backend.render('index', {
+                title: __('m_roles_backend_controllers_index_findAll_title'),
+                items: roles,
+                toolbar: toolbar
+            });
+        })().catch(function (error) {
+            req.flash.error(`Name: ${error.name}<br />Message: ${error.message}`);
+            res.backend.render('index', {
+                title: __('m_roles_backend_controllers_index_findAll_title'),
+                toolbar: toolbar,
+                roles: null
+            });
+        });
     };
 
     controller.create = function (req, res) {

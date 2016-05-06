@@ -1,0 +1,60 @@
+{
+  "information": {
+    "theme_name": "Arrowjs",
+    "theme_uri": "techmaster.vn",
+    "author": "robinhuy",
+    "author_email": "robin@gmail.com",
+    "version": "1.0",
+    "tag": "bootstrap, corporate, html, responsive, acme"
+  },
+  "sidebars": [
+    {
+      "name": "main-menu",
+      "title": "Main Menu"
+    },
+    {
+      "name": "home-slogan-sidebar",
+      "title": "Home Slogan Sidebar"
+    },
+    {
+      "name": "home-left-sidebar",
+      "title": "Home Left Sidebar"
+    },
+    {
+      "name": "home-right-sidebar",
+      "title": "Home Right Sidebar"
+    },
+    {
+      "name": "home-middle-sidebar",
+      "title": "Home Middle Sidebar"
+    },
+    {
+      "name": "home-bottom-sidebar",
+      "title": "Home Bottom Sidebar"
+    },
+    {
+      "name": "home-footer-sidebar",
+      "title": "Home Footer Sidebar"
+    },
+    {
+      "name": "post-top-sidebar",
+      "title": "Post Top Sidebar"
+    },
+    {
+      "name": "post-bottom-sidebar",
+      "title": "Post Bottom Sidebar"
+    },
+    {
+      "name": "doc-content-sidebar",
+      "title": "Doc Content Sidebar"
+    },
+    {
+      "name": "404-content-sidebar",
+      "title": "404 Content Sidebar"
+    },
+    {
+      "name": "left_menu",
+      "title": "Left menu"
+    }
+  ]
+}

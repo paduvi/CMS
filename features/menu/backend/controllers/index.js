@@ -72,10 +72,10 @@ module.exports = function (controller, component, app) {
                 let menus = JSON.parse(data).sidebars;
                 let features = [];
                 if (app.feature)
-                    for (let feature of app.feature) {
-                        if (feature.hasOwnProperty('add_link_menu')) {
-                            for (let value of feature['add_link_menu']) {
-                                features.push(value);
+                    for (let k in app.feature) {
+                        if (app.feature[k].hasOwnProperty('add_link_menu')) {
+                            for (let key in app.feature[k]['add_link_menu']) {
+                                features.push(app.feature[k]['add_link_menu'][key]);
                             }
                         }
                     }
@@ -279,10 +279,10 @@ module.exports = function (controller, component, app) {
                 let menus = JSON.parse(data).sidebars;
                 let features = [];
                 if (app.feature)
-                    for (let feature of app.feature) {
-                        if (feature.hasOwnProperty('add_link_menu')) {
-                            for (let value of feature['add_link_menu']) {
-                                features.push(value);
+                    for (let k in app.feature) {
+                        if (app.feature[k].hasOwnProperty('add_link_menu')) {
+                            for (let key in app.feature[k]['add_link_menu']) {
+                                features.push(app.feature[k]['add_link_menu'][key]);
                             }
                         }
                     }

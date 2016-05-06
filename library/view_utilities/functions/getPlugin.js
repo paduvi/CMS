@@ -31,7 +31,7 @@ module.exports = {
                 let html = '';
 
                 if (_.isEmpty(plugins)) {
-                    callback(null, '');
+                    return callback(null, '');
                 } else {
                     yield Promise.map(plugins, function (plugin) {
                         let pluginConfig = app.plugin[plugin.plugin_name];
@@ -61,7 +61,7 @@ module.exports = {
                             })();
                         }
                     });
-                    callback(null, html);
+                    return callback(null, html);
                 }
             })().catch(function () {
                 callback(null, '');

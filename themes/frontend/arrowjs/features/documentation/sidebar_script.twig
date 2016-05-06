@@ -1,0 +1,93 @@
+<script type="text/javascript">
+    $(function () {
+        // Init side menu
+        $("li a", $('.sidebar-menu')).click(function (e) {
+            // Get the clicked link and the next element
+            var $this = $(this);
+            var checkElement = $this.next();
+
+            // Check if the next element is a menu and is visible
+            if ((checkElement.is('.treeview-menu')) && (checkElement.is(':visible'))) {
+                // Close the menu
+                checkElement.prev('a').children('i').removeClass('fa-caret-down').addClass('fa-caret-right');
+                checkElement.slideUp('fast', function () {
+                    checkElement.removeClass('menu-open');
+                });
+                checkElement.parent("li").removeClass("active");
+            } else if ((checkElement.is('.treeview-menu')) && (!checkElement.is(':visible'))) {
+                // Get the parent menu
+                var parent = $this.parents('ul').first();
+
+                // Get open menus within the parent
+                var ul = parent.find('ul:visible');
+
+                // Get the parent li
+                var parent_li = $this.parent("li");
+
+                // Open the target menu
+                checkElement.prev('a').children('i').removeClass('fa-caret-right').addClass('fa-caret-down');
+                checkElement.slideDown('fast', function () {
+                    // Add the class active to the parent li
+                    checkElement.addClass('menu-open');
+                    parent.find('li.active').removeClass('active');
+                    parent_li.addClass('active');
+                });
+            }
+
+            // If this isn't a link, prevent the page from being redirected
+            if (checkElement.is('.treeview-menu')) {
+                e.preventDefault();
+            }
+        });
+
+        // Set navigation
+        $('.sidebar-menu > li > ul > li > a').each(function () {
+            var path = window.location.pathname;
+            var href = $(this).attr('href');
+            if (href && path == href) {
+                $(this).append('<i class="fa fa-angle-right api-selected"></i>');
+                $(this).parent('li').addClass('selected');
+                $(this).parent('li').parent('ul').parent('li').addClass('selected');
+
+                // Collapse treeview except current selected
+                var ul = $(this).parent('li').parent('ul');
+                $('li.treeview > ul.treeview-menu').css('display', 'none');
+                ul.css('display', '');
+                ul.prev('a').children('i').removeClass('fa-caret-right').addClass('fa-caret-down');
+            }
+        });
+
+        // Balance height in desktop screen
+        if ($('.arr-check-responsive').css('font-size') == '10px') {
+            balanceHeight();
+        }
+        // Go to main content in mobile screen
+        else {
+            window.location.hash = '#read_content';
+        }
+
+        // Event when window resize
+        $(window).resize(function () {
+            // Balance height in desktop screen
+            if ($('.arr-check-responsive').css('font-size') == '10px') {
+                balanceHeight();
+            } else {
+                // Reset height in small screen
+                $('.arr-left-navigation').css('height', 'auto');
+
+                // Go to main content in mobile screen
+                window.location.hash = '#read_content';
+            }
+        });
+    });
+
+    function balanceHeight() {
+        var leftColumn = $('.arr-left-navigation');
+        var rightColumn = $('.arr-right-content');
+        if (leftColumn.height() > rightColumn.height()) {
+            rightColumn.height(leftColumn.height());
+        } else {
+            leftColumn.height(rightColumn.height());
+        }
+    }
+</script>

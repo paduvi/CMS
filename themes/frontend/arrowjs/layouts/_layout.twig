@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Techmaster Viet Nam">
+    <link rel="shortcut icon" href="favicon.png">
+
+    <!-- Core CSS -->
+    <link href='http://fonts.googleapis.com/css?family=Roboto:500,700,400' rel='stylesheet' type='text/css'>
+    <link href="/frontend/arrowjs/assets/lib/font-awesome/css/font-awesome.css" rel="stylesheet"/>
+    {#<link href="/theme_resources/frontend/arrowjs/css/application.min.css" rel="stylesheet">#}
+    <link href="/frontend/arrowjs/assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/frontend/arrowjs/assets/css/style.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 tooltipss and media queries -->
+    <!--[if lt IE 9]>
+    <script src="/frontend/arrowjs/assets/js/html5shiv.js"></script>
+    <script src="/frontend/arrowjs/assets/js/respond.min.js"></script>
+    <![endif]-->
+
+    {% block cssExtends %}
+    {% endblock %}
+</head>
+
+<body>
+{% include '_header.twig' %}
+
+{% block content %}
+{% endblock %}
+<!-- Advertisments -->
+<div><a id="banner" href="http://techmaster.vn/khoa-hoc/25480/nodejs-xay-dung-web-site-toc-do-cao"
+        style="position: fixed;
+    bottom: 20%;
+    padding: 15px;
+    background-color: orange;
+    text-decoration: none;
+    color: white;">
+        Bạn muốn tạo website tương tự ?
+    </a>
+</div>
+<script>
+    setInterval(function () {
+        $('#banner').slideUp();
+        setTimeout(function () {
+            $('#banner').slideDown();
+        },2000)
+    },4000);
+</script>
+
+{% include '_footer.twig' %}
+
+<!-- Core JS -->
+<script src="/frontend/arrowjs/assets/js/jquery.min.js"></script>
+<script src="/frontend/arrowjs/assets/js/bootstrap.min.js"></script>
+<script src="/frontend/arrowjs/assets/js/highlight.pack.js"></script>
+<script src="/frontend/arrowjs/assets/js/arrowjs.js"></script>
+
+{% block jsExtends %}
+{% endblock %}
+</body>
+</html>

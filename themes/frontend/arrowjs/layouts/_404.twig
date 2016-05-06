@@ -1,0 +1,9 @@
+{% extends '_layout.twig' %}
+
+{% block content %}
+    <div class="arr-top-container">
+        <article class="size-wrap">
+            {{ getSidebar("404-content-sidebar") | async | safe }}
+        </article>
+    </div>
+{% endblock %}

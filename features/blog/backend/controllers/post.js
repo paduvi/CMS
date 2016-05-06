@@ -156,54 +156,53 @@ module.exports = function (controller, component, app) {
         });
 
         Promise.coroutine(function*() {
-                // Find all posts
-                let results = yield app.feature.blog.actions.findAndCountAll({
-                    where: filter.conditions,
-                    include: [
-                        {
-                            model: app.models.user,
-                            attributes: ['display_name'],
-                            where: ['1 = 1']
-                        }
-                    ],
-                    order: filter.order,
-                    limit: filter.limit,
-                    offset: (page - 1) * itemOfPage
-                });
-                let totalPage = Math.ceil(results.count / itemOfPage);
-
-                // Replace title of no-title post
-                let items = results.rows;
-                items.map(function (item) {
-                    if (!item.title) item.title = '(no title)';
-                });
-
-                // Render view
-                res.backend.render('post/index', {
-                    title: __('m_blog_backend_post_render_title'),
-                    totalPage: totalPage,
-                    items: items,
-                    currentPage: page,
-                    toolbar: toolbar,
-                    queryString: (req.url.indexOf('?') == -1) ? '' : `?${req.url.split('?').pop()}`,
-                    baseRoute: baseRoute
-                });
-            })()
-            .catch(function (err) {
-                logger.error(err);
-                req.flash.error(`Name: ${err.name}<br />Message: ${err.message}`);
-
-                // Render view if has error
-                res.backend.render('post/index', {
-                    title: __('m_blog_backend_post_render_title'),
-                    totalPage: 1,
-                    items: null,
-                    currentPage: page,
-                    toolbar: toolbar,
-                    queryString: (req.url.indexOf('?') == -1) ? '' : `?${req.url.split('?').pop()}`,
-                    baseRoute: baseRoute
-                });
+            // Find all posts
+            let results = yield app.feature.blog.actions.findAndCountAll({
+                where: filter.conditions,
+                include: [
+                    {
+                        model: app.models.user,
+                        attributes: ['display_name'],
+                        where: ['1 = 1']
+                    }
+                ],
+                order: filter.order,
+                limit: filter.limit,
+                offset: (page - 1) * itemOfPage
             });
+            let totalPage = Math.ceil(results.count / itemOfPage);
+
+            // Replace title of no-title post
+            let items = results.rows;
+            items.map(function (item) {
+                if (!item.title) item.title = '(no title)';
+            });
+
+            // Render view
+            res.backend.render('post/index', {
+                title: __('m_blog_backend_post_render_title'),
+                totalPage: totalPage,
+                items: items,
+                currentPage: page,
+                toolbar: toolbar,
+                queryString: (req.url.indexOf('?') == -1) ? '' : `?${req.url.split('?').pop()}`,
+                baseRoute: baseRoute
+            });
+        })().catch(function (err) {
+            logger.error(err);
+            req.flash.error(`Name: ${err.name}<br />Message: ${err.message}`);
+
+            // Render view if has error
+            res.backend.render('post/index', {
+                title: __('m_blog_backend_post_render_title'),
+                totalPage: 1,
+                items: null,
+                currentPage: page,
+                toolbar: toolbar,
+                queryString: (req.url.indexOf('?') == -1) ? '' : `?${req.url.split('?').pop()}`,
+                baseRoute: baseRoute
+            });
+        });
     };
 
     controller.postCreate = function (req, res) {
@@ -212,23 +211,22 @@ module.exports = function (controller, component, app) {
         toolbar.addSaveButton();
 
         Promise.coroutine(function*() {
-                let categories = yield app.feature.category.actions.findAll({
-                    where: {
-                        type: 'post'
-                    },
-                    order: 'name ASC'
-                });
-                res.backend.render('post/new', {
-                    title: __('m_blog_backend_post_render_create'),
-                    categories: categories,
-                    baseRoute: baseRoute,
-                    toolbar: toolbar.render()
-                });
-            })()
-            .catch(function (err) {
-                req.flash.error(`Name: ${err.name}<br />Message: ${err.message}`);
-                res.redirect(baseRoute);
+            let categories = yield app.feature.category.actions.findAll({
+                where: {
+                    type: 'post'
+                },
+                order: 'name ASC'
             });
+            res.backend.render('post/new', {
+                title: __('m_blog_backend_post_render_create'),
+                categories: categories,
+                baseRoute: baseRoute,
+                toolbar: toolbar.render()
+            });
+        })().catch(function (err) {
+            req.flash.error(`Name: ${err.name}<br />Message: ${err.message}`);
+            res.redirect(baseRoute);
+        });
     };
 
     controller.postSave = function (req, res, next) {
@@ -240,33 +238,32 @@ module.exports = function (controller, component, app) {
 
         Promise.coroutine(function*() {
 
-                if (data.post_id && data.post_id > 0) {
-                    post_id = data.post_id;
+            if (data.post_id && data.post_id > 0) {
+                post_id = data.post_id;
 
-                    // Update draft post
-                    data.modified_by = author;
+                // Update draft post
+                data.modified_by = author;
 
-                    let post = yield blogAction.findById(post_id);
-                    yield Promise.resolve(updatePost(post, data));
+                let post = yield blogAction.findById(post_id);
+                yield Promise.resolve(updatePost(post, data));
 
-                } else {
-                    // Create post
-                    data.created_by = author;
+            } else {
+                // Create post
+                data.created_by = author;
 
-                    let post = yield blogAction.create(data, 'post');
-                    post_id = post.id;
-                    oldPost = post;
+                let post = yield blogAction.create(data, 'post');
+                post_id = post.id;
+                oldPost = post;
 
-                    yield Promise.resolve(updateCategoryCount(post));
-                }
-                req.flash.success(__('m_blog_backend_post_flash_create_success'));
-                res.redirect(baseRoute + post_id);
-            })()
-            .catch(function (err) {
-                req.flash.error(getErrorMsg(err, oldPost, data));
-                res.locals.post = data;
-                next();
-            });
+                updateCategoryCount(post);
+            }
+            req.flash.success(__('m_blog_backend_post_flash_create_success'));
+            res.redirect(baseRoute + post_id);
+        })().catch(function (err) {
+            req.flash.error(getErrorMsg(err, oldPost, data));
+            res.locals.post = data;
+            next();
+        });
     };
 
     controller.postView = function (req, res) {
@@ -285,35 +282,34 @@ module.exports = function (controller, component, app) {
         toolbar.addDeleteButton();
 
         Promise.coroutine(function*() {
-                // Find all categories
-                let categories = yield app.feature.category.actions.findAll({
-                    where: {
-                        type: 'post'
-                    },
-                    order: 'name ASC'
-                });
-                // Add preview button
-                toolbar.addGeneralButton(true, {
-                    title: '<i class="fa fa-eye"></i> Preview',
-                    link: baseRoute + 'preview/' + post.id,
-                    target: '_blank',
-                    buttonClass: 'btn btn-info'
-                });
-
-                // Render view
-                res.backend.render('post/new', {
-                    title: __('m_blog_backend_post_render_update'),
-                    categories: categories,
-                    post: post,
-                    baseRoute: baseRoute,
-                    toolbar: toolbar.render()
-                });
-            })()
-            .catch(function (err) {
-                logger.error(err);
-                req.flash.error(`Name: ${err.name}<br />Message: ${err.message}`);
-                res.redirect(baseRoute);
+            // Find all categories
+            let categories = yield app.feature.category.actions.findAll({
+                where: {
+                    type: 'post'
+                },
+                order: 'name ASC'
             });
+            // Add preview button
+            toolbar.addGeneralButton(true, {
+                title: '<i class="fa fa-eye"></i> Preview',
+                link: baseRoute + 'preview/' + post.id,
+                target: '_blank',
+                buttonClass: 'btn btn-info'
+            });
+
+            // Render view
+            res.backend.render('post/new', {
+                title: __('m_blog_backend_post_render_update'),
+                categories: categories,
+                post: post,
+                baseRoute: baseRoute,
+                toolbar: toolbar.render()
+            });
+        })().catch(function (err) {
+            logger.error(err);
+            req.flash.error(`Name: ${err.name}<br />Message: ${err.message}`);
+            res.redirect(baseRoute);
+        });
     };
 
     controller.postUpdate = function (req, res, next) {
@@ -330,16 +326,15 @@ module.exports = function (controller, component, app) {
         data.modified_by = author;
 
         Promise.coroutine(function*() {
-                // Update post
-                yield updatePost(post, data);
-                req.flash.success(__('m_blog_backend_post_flash_update_success'));
-                res.redirect(baseRoute + req.params.postId);
-            })()
-            .catch(function (err) {
-                req.flash.error(getErrorMsg(err, post, data));
-                res.locals.post = data;
-                next();
-            });
+            // Update post
+            yield updatePost(post, data);
+            req.flash.success(__('m_blog_backend_post_flash_update_success'));
+            res.redirect(baseRoute + req.params.postId);
+        })().catch(function (err) {
+            req.flash.error(getErrorMsg(err, post, data));
+            res.locals.post = data;
+            next();
+        });
     };
 
     controller.postPreview = function (req, res) {
@@ -366,41 +361,39 @@ module.exports = function (controller, component, app) {
 
         if (data.post_id) {
             Promise.coroutine(function*() {
-                    let post = yield app.feature.blog.actions.findById(data.post_id);
+                let post = yield app.feature.blog.actions.findById(data.post_id);
 
-                    // Recheck permissions to prevent user access by ajax
-                    if (req.permissions.indexOf(permissionManageAll) == -1 && post.created_by != author) {
-                        return res.jsonp({id: 0});
-                    }
+                // Recheck permissions to prevent user access by ajax
+                if (req.permissions.indexOf(permissionManageAll) == -1 && post.created_by != author) {
+                    return res.jsonp({id: 0});
+                }
 
-                    data.modified_by = author;
-                    // Update post
-                    yield updatePost(post, data);
-                    res.jsonp({id: post.id});
-                })()
-                .catch(function (err) {
-                    logger.error(err);
-                    res.jsonp({id: 0});
-                });
+                data.modified_by = author;
+                // Update post
+                yield updatePost(post, data);
+                res.jsonp({id: post.id});
+            })().catch(function (err) {
+                logger.error(err);
+                res.jsonp({id: 0});
+            });
         } else {
             data.created_by = author;
             let newPost;
 
             Promise.coroutine(function*() {
-                    // Create post
-                    let post = yield app.feature.blog.actions.create(data, 'post');
-                    newPost = post;
-                    // Update count of categories if post is published
-                    yield updateCategoryCount(post);
-                    if (newPost && newPost.id)
-                        res.jsonp({id: newPost.id});
-                    else
-                        res.jsonp({id: 0});
-                })()
-                .catch(function (err) {
-                    logger.error(err);
+                // Create post
+                let post = yield app.feature.blog.actions.create(data, 'post');
+                newPost = post;
+                // Update count of categories if post is published
+                updateCategoryCount(post);
+                if (newPost && newPost.id)
+                    res.jsonp({id: newPost.id});
+                else
                     res.jsonp({id: 0});
-                });
+            })().catch(function (err) {
+                logger.error(err);
+                res.jsonp({id: 0});
+            });
         }
     };
 
@@ -410,55 +403,53 @@ module.exports = function (controller, component, app) {
         let blogAction = app.feature.blog.actions;
 
         Promise.coroutine(function*() {
-                // Find posts need to delete
-                let posts = yield blogAction.findAll({
-                    where: {
-                        id: {
-                            $in: ids
-                        }
+            // Find posts need to delete
+            let posts = yield blogAction.findAll({
+                where: {
+                    id: {
+                        $in: ids
                     }
-                });
-                yield Promise.map(posts, function (post) {
-                    // Recheck permissions to prevent user access by ajax
-                    if (req.permissions.indexOf(permissionManageAll) == -1 && post.created_by != req.user.id) {
-                        return null;
-                    } else {
-                        return Promise.coroutine(function*() {
-                            yield blogAction.destroy([post.id]);
-                            let categories = post.categories ? categoryAction.convertToArray(post.categories) : [];
-                            if (categories.length > 0) {
-                                // Update count of categories
-                                return categoryAction.updateCount(categories, 'arr_post', 'categories', 'AND type = \'post\' AND published = 1');
-                            }
-                        })();
-                    }
-                });
-                req.flash.success(__('m_blog_backend_post_flash_delete_success'));
-                res.sendStatus(200);
-            })()
-            .catch(function (err) {
-                logger.error(err);
-                req.flash.error(`Name: ${err.name}<br />Message: ${err.message}`);
-                res.sendStatus(200);
+                }
             });
+            yield Promise.map(posts, function (post) {
+                // Recheck permissions to prevent user access by ajax
+                if (req.permissions.indexOf(permissionManageAll) == -1 && post.created_by != req.user.id) {
+                    return null;
+                } else {
+                    return Promise.coroutine(function*() {
+                        yield blogAction.destroy([post.id]);
+                        let categories = post.categories ? categoryAction.convertToArray(post.categories) : [];
+                        if (categories.length > 0) {
+                            // Update count of categories
+                            return categoryAction.updateCount(categories, 'arr_post', 'categories', 'AND type = \'post\' AND published = 1');
+                        }
+                    })();
+                }
+            });
+            req.flash.success(__('m_blog_backend_post_flash_delete_success'));
+            res.sendStatus(200);
+        })().catch(function (err) {
+            logger.error(err);
+            req.flash.error(`Name: ${err.name}<br />Message: ${err.message}`);
+            res.sendStatus(200);
+        });
     };
 
     controller.postRead = function (req, res, next, id) {
         Promise.coroutine(function*() {
-                let post = yield app.feature.blog.actions.findById(id);
+            let post = yield app.feature.blog.actions.findById(id);
 
-                if (post) {
-                    req.post = req.page = req.interview = post;
-                    next();
-                } else {
-                    req.flash.error('Post is not exists');
-                    res.redirect(baseRoute);
-                }
-            })()
-            .catch(function (err) {
-                req.flash.error(`Name: ${err.name}<br />Message: ${err.message}`);
+            if (post) {
+                req.post = req.page = req.interview = post;
+                next();
+            } else {
+                req.flash.error('Post is not exists');
                 res.redirect(baseRoute);
-            });
+            }
+        })().catch(function (err) {
+            req.flash.error(`Name: ${err.name}<br />Message: ${err.message}`);
+            res.redirect(baseRoute);
+        });
     };
 
     /**
@@ -496,5 +487,4 @@ module.exports = function (controller, component, app) {
         })();
     }
 
-}
-;
+};

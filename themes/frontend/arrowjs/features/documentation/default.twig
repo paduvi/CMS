@@ -1,0 +1,34 @@
+{% extends '_layout.twig' %}
+
+{% block content %}
+    <div class="arr-top-container">
+        <div class="size-wrap">
+            {% include 'sidebar_view.twig' %}
+
+            <div class="arr-right-content">
+                <div class="arr-post-title text-center">
+                    ArrowJS {{ version.name|title }} documentation
+                </div>
+
+                <div class="arr-post-content">
+                    {{ getSidebar("doc-content-sidebar") | async | safe }}
+                    <p>
+                        Other version: /
+                        {% for v in versions %}
+                            {% if v.id == version.id %}
+                                {{ v.name }} /
+                            {% else %}
+                                <a href="/documentation/{{ v.alias }}"
+                                   style="text-decoration: underline;"> {{ v.name }}</a> /
+                            {% endif %}
+                        {% endfor %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block jsExtends %}
+    {% include 'sidebar_script.twig' %}
+{% endblock %}

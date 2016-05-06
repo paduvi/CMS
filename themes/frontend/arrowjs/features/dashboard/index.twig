@@ -1,0 +1,55 @@
+{% extends '_layout.twig' %}
+
+{% block cssExtends %}
+    <link href="/frontend/arrowjs/assets/lib/bxslider4/dist/jquery.bxslider.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+    <div class="arr-top-container">
+        <div class="size-wrap">
+            <div class="row">
+                <div class="col-md-12">
+                    <h2 class="text-center" style="margin-bottom: 30px;">
+                        {{  getSidebar("home-slogan-sidebar") | async | safe }}
+                    </h2>
+                </div>
+            </div>
+
+            <div class="row arr-index-sidebar">
+                <div class="col-md-6">
+                        {{ getSidebar("home-left-sidebar") | async | safe }}
+                </div>
+                <div class="col-md-6">
+                    {{ getSidebar("home-right-sidebar") | async | safe }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="arr-middle-container">
+        <div class="size-wrap">
+            {{ getSidebar("home-middle-sidebar") | async | safe }}
+        </div>
+    </div>
+
+    <div class="arr-bottom-container">
+        <div class="size-wrap">
+            <div class="row">
+                {{ getSidebar("home-bottom-sidebar") | async | safe }}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block jsExtends %}
+    <script src="/frontend/arrowjs/assets/lib/bxslider4/dist/jquery.bxslider.min.js"></script>
+    <script src="/frontend/arrowjs/assets/lib/bxslider4/dist/vendor/jquery.fitvids.js"></script>
+    <script>
+        $(function () {
+            // Init bxslider
+            $('.bxslider').bxSlider({
+                touchEnabled: false
+            });
+        });
+    </script>
+{% endblock %}
