@@ -47,7 +47,11 @@ module.exports = function (controller, component, app) {
                     type: 'post',
                     published: 1
                 },
-                raw: true
+                include: [
+                    {
+                        model: app.models.user
+                    }
+                ]
             });
             if (post) {
                 // Get id of category contain post
@@ -68,12 +72,9 @@ module.exports = function (controller, component, app) {
                         }
                     }
                 });
-                let user = yield app.feature.users.actions.findById(post.created_by);
                 // Render view
-                console.log(JSON.stringify(post, null, 3));
                 res.frontend.render('post', {
                     post: post,
-                    user: user,
                     categories: categories
                 });
             } else {
@@ -138,7 +139,7 @@ module.exports = function (controller, component, app) {
                     include: [
                         {
                             model: app.models.user,
-                            attributes: ['id', 'display_name', 'user_login', 'user_email', 'user_image_url']
+                            attributes: ['id', 'display_name', 'user_email', 'user_image_url']
                         }
                     ],
                     where: {
@@ -174,48 +175,50 @@ module.exports = function (controller, component, app) {
     controller.listPostByCategory = function (req, res) {
         let page = req.params.page || 1;
         let number_item = app.getConfig('pagination').frontNumberItem || 10;
-        let alias = req.params.alias || '';
-        let id = req.params.id || '';
 
         Promise.coroutine(function*() {
-                let result = yield Promise.all([
-                    app.feature.blog.actions.findAndCountAll({
-                        include: [
-                            {
-                                model: app.models.user,
-                                attributes: ['id', 'display_name', 'user_login', 'user_email', 'user_image_url']
-                            }
-                        ],
-                        where: {
-                            categories: {$like: `%:${req.params.id}:%`},
-                            type: 'post',
-                            published: 1
-                        },
-                        order: 'id ASC',
-                        offset: (page - 1) * number_item,
-                        limit: number_item
-                    }),
-                    app.feature.category.actions.findAll({order: 'id asc'})
-                ]);
+            let result = yield Promise.all([
+                app.feature.blog.actions.findAndCountAll({
+                    include: [
+                        {
+                            model: app.models.user,
+                            attributes: ['id', 'display_name', 'user_email', 'user_image_url']
+                        }
+                    ],
+                    where: {
+                        categories: {$like: `%:${req.params.id}:%`},
+                        type: 'post',
+                        published: 1
+                    },
+                    order: 'id ASC',
+                    offset: (page - 1) * number_item,
+                    limit: number_item
+                }),
+                app.feature.category.actions.findAll(),
+                app.feature.category.actions.findById(req.params.id)
+            ]);
+            if (result) {
                 let totalPage = Math.ceil(result[0].count / number_item);
-                if (result) {
-                    // Render view
-                    res.frontend.render('posts', {
-                        posts: result[0].rows,
-                        numberOfPost: result[0].rows.length,
-                        totalPage: totalPage,
-                        currentPage: page,
-                        baseURL: `/blog/posts/categories/${alias}/${id}`,
-                    });
-                } else {
-                    // Redirect to 404 if post not exist
-                    res.frontend.render('_404');
-                }
-            })()
-            .catch(function (err) {
-                logger.error(err.stack);
+                let posts = result[0].rows;
+                let categories = result[1];
+                let category = result[2];
+                // Render view
+                res.frontend.render('posts', {
+                    postTitle: category.name,
+                    posts: posts,
+                    totalPage: totalPage,
+                    currentPage: page,
+                    categories: categories,
+                    baseURL: `/blog/posts/categories/${category.alias}/${category.id}`,
+                });
+            } else {
+                // Redirect to 404 if post not exist
                 res.frontend.render('_404');
-            });
+            }
+        })().catch(function (err) {
+            logger.error(err.stack);
+            res.frontend.render('_404');
+        });
     };
 
     controller.search = function (req, res) {

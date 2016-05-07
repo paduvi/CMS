@@ -10,7 +10,7 @@ module.exports = function (controller, component, app) {
                 include: [
                     {
                         model: app.models.user,
-                        attributes: ['id', 'display_name', 'user_login', 'user_email', 'user_image_url']
+                        attributes: ['id', 'display_name', 'user_email', 'user_image_url']
                     }
                 ],
                 where: {

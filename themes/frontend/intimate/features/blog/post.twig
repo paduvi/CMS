@@ -2,11 +2,6 @@
 {% block content %}
     <!-- Blog Article Start-->
     <article class="single-post-content">
-        <!-- Blog item Start -->
-        <div class="blog-item-wrap">
-            <a data-lightbox="roadtrip" href="{{ post.image }}"><img alt="{{ post.title }}" src=
-                "{{ post.image }}"></a>
-        </div><!-- Blog item End --><br>
         {{ post.full_text | safe }}
 
         <div class="links">
@@ -17,12 +12,15 @@
     <!-- Blog Article Start -->
     <article>
         <div class="author">
-            <div class="author-img"><img alt="" src=
-                "{{ user.user_image_url }}"></div>
+            <div class="author-img">
+                <a href="{{ post.user.user_image_url }}" data-lightbox="roadtrip">
+                    <img alt="{{ post.user.display_name }}" src="{{ post.user.user_image_url }}">
+                </a>
+            </div>
             <div class="author-content">
-                <h4>Author: {{ user.display_name }}</h4>
-                <p>Email: {{ user.user_email }}</p>
-                <p>Status: {{ user.user_status }}</p>
+                <h4>Author: {{ post.user.display_name }}</h4>
+                <p>Email: {{ post.user.user_email }}</p>
+                <p>Status: {{ post.user.user_status }}</p>
             </div>
         </div>
     </article><!-- Blog Article End -->

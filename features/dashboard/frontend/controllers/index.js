@@ -1,4 +1,5 @@
 'use strict';
+let Promise = require('arrowjs').Promise;
 
 module.exports = function (controller, component, application) {
 
@@ -6,28 +7,33 @@ module.exports = function (controller, component, application) {
         let page = req.params.page || 1;
         let itemOfPage = application.getConfig("pagination").frontNumberItem | 10;
         let totalPage = 1;
-        application.feature.blog.actions.findAndCountAll({
-            where: {
-                published: 1,
-                type: "post"
-            },
-            include: [
-                {
-                    model: application.models.user
-                }
-            ],
-            limit: itemOfPage,
-            offset: (page - 1) * itemOfPage,
-            order: "id desc"
-        }).then(function (result) {
-            totalPage = Math.ceil(result.count / itemOfPage);
+        Promise.coroutine(function*() {
+            let result = yield Promise.all([
+                application.feature.blog.actions.findAndCountAll({
+                    where: {
+                        published: 1,
+                        type: "post"
+                    },
+                    include: [
+                        {
+                            model: application.models.user
+                        }
+                    ],
+                    limit: itemOfPage,
+                    offset: (page - 1) * itemOfPage,
+                    order: "id desc"
+                }),
+                application.feature.category.actions.findAll()
+            ]);
+
+            totalPage = Math.ceil(result[0].count / itemOfPage);
             res.frontend.render('index', {
-                postTitle: 'Welcome To TechMaster',
-                posts: result.rows,
+                postTitle: `Welcome To ChoToXauTinh's Blog`,
+                posts: result[0].rows,
                 totalPage: totalPage,
-                itemOfPage: itemOfPage,
+                categories: result[1],
                 currentPage: page
-            })
-        })
+            });
+        })();
     };
 };

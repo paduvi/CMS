@@ -13,7 +13,7 @@
                     <span class="icon-bar"></span></button>
                 <div class="logo">
                     <a class="navbar-brand" href="/"><i class=
-                                                                 "ico-3dglasses"></i></a>
+                                                        "ico-3dglasses"></i></a>
                 </div>
             </div>
             <!-- Navigation Start -->
@@ -29,8 +29,22 @@
         <div class="row">
             <div class="col-md-12">
                 <div class="intro-area">
-                    <h3>{{ postTitle }}</h3>
-                    <h2 class="page-title">Intimate Blog</h2>
+                    <h3>
+                        {% if post %}
+                            {{ post.title }}
+                        {% else %}
+                            {{ postTitle }}
+                        {% endif %}
+                    </h3>
+                    {% if post %}
+                        <div class="entry-meta">
+                            <span class="meta-part"><i class="ico-user"></i>{{ post.user.display_name }}</span>
+                            <span class="meta-part"><i
+                                        class="ico-calendar-alt-fill"></i>{{ post.published_at | moment('LL') }}</span>
+                            <span class="meta-part"><i
+                                        class="ico-tag"></i>{{ post.categories | category(categories) | safe }}</span>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

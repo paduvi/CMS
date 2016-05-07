@@ -1,5 +1,7 @@
 'use strict';
 
+let Promise = require('arrowjs').Promise;
+
 module.exports = function (controller, component, application) {
 
     controller.settingWidget = function (widget) {
@@ -33,21 +35,28 @@ module.exports = function (controller, component, application) {
         if (JSON.parse(widget.data).display_date == 1) atts.push('published_at');
 
         if (ids.length > 0) {
-            return application.models.post.findAll({
-                attributes: atts,
-                order: 'published_at DESC',
-                where: {
-                    id: {
-                        $in: ids
-                    },
-                    published: 1,
-                    type: 'post'
-                },
-                raw: true
-            }).then(function (posts) {
+            return Promise.coroutine(function*() {
+                let result = yield Promise.all([
+                    application.models.post.findAll({
+                        attributes: atts,
+                        order: 'published_at DESC',
+                        where: {
+                            id: {
+                                $in: ids
+                            },
+                            published: 1,
+                            type: 'post'
+                        },
+                        raw: true
+                    }),
+                    application.models.category.findAll()
+                ]);
+                let posts = result[0];
+                let categories = result[1];
                 // Render view with layout
                 return component.render(layout, {
                     widget: JSON.parse(widget.data),
+                    categories: categories,
                     posts: posts
                 })
             });
