@@ -10,7 +10,7 @@
                     <span><i class="fa fa-camera"></i></span>
                 </div><!-- Post Format icon End -->
                 <h2 class="blog-title">
-                    <a href="/blog/{{ post.alias }}">{{ post.title }}</a>
+                    <a href="/blog/posts/{{ post.id }}/{{ post.alias }}">{{ post.title }}</a>
                 </h2>
                 <!-- Entry Meta Start-->
                 <div class="entry-meta">
@@ -22,7 +22,7 @@
                 <!-- Feature inner Start -->
                 {% if post.image %}
                     <div class="feature-inner">
-                        <a data-lightbox="roadtrip" href="/blog/{{ post.alias }}">
+                        <a href="/blog/posts/{{ post.id }}/{{ post.alias }}">
                             <img alt="{{ post.title }}" src="{{ post.image }}">
                         </a>
                     </div>
@@ -36,8 +36,8 @@
                 <div class="entry-more">
                     <div class="pull-left">
                         <a class="btn btn-common" href=
-                        "/blog/{{ post.alias }}">Read More <i class=
-                                                              "ico-arrow-right"></i></a>
+                        "/blog/posts/{{ post.id }}/{{ post.alias }}">Read More <i class=
+                                                                                  "ico-arrow-right"></i></a>
                     </div>
                     <div class="share-icon pull-right">
                         <span class="socialShare"></span>
@@ -46,4 +46,7 @@
             </div><!-- Blog item End -->
         </article><!-- Blog Article End-->
     {% endfor %}
+
+
+    {{ totalPage | pagination(currentPage) | safe }}
 {% endblock %}

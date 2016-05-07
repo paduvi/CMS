@@ -68,9 +68,12 @@ module.exports = function (controller, component, app) {
                         }
                     }
                 });
+                let user = yield app.feature.users.actions.findById(post.created_by);
                 // Render view
+                console.log(JSON.stringify(post, null, 3));
                 res.frontend.render('post', {
                     post: post,
+                    user: user,
                     categories: categories
                 });
             } else {
@@ -202,7 +205,7 @@ module.exports = function (controller, component, app) {
                         numberOfPost: result[0].rows.length,
                         totalPage: totalPage,
                         currentPage: page,
-                        baseURL: `/blog/posts/categories/${alias}/${id}/page-${page}`,
+                        baseURL: `/blog/posts/categories/${alias}/${id}`,
                     });
                 } else {
                     // Redirect to 404 if post not exist
@@ -217,7 +220,7 @@ module.exports = function (controller, component, app) {
 
     controller.search = function (req, res) {
         let page = req.params.page || 1;
-        let number_item = app.getConfig('pagination').frontNumberItem || 10;
+        let number_item = 1;//app.getConfig('pagination').frontNumberItem || 10;
         let totalPage = 1;
         let key = req.body.searchStr || req.params.searchStr || req.query.searchStr || '';
 

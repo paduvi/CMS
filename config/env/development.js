@@ -14,8 +14,8 @@ module.exports = {
        dialect: 'postgres',
        logging: false
     },
-    //redis: {
-    //    host: 'localhost',
-    //    port: '6379'
-    //}
+    redis: {
+       host: 'localhost',
+       port: '6379'
+    }
 };

@@ -57,7 +57,7 @@ module.exports = function (component) {
                 handler: controller.listPostByCategory
             }
         },
-        "/blog/posts/categories/:alias([0-9a-zA-Z-]+)/:id([0-9]+)/page-:page([0-9]+)?(/)?": {
+        "/blog/posts/categories/:alias([0-9a-zA-Z-]+)/:id([0-9]+)/page/:page([0-9]+)?(/)?": {
             get: {
                 handler: controller.listPostByCategory
             }

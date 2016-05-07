@@ -1,0 +1,29 @@
+{% extends '_layout.twig' %}
+{% block content %}
+    <!-- Blog Article Start-->
+    <article class="single-post-content">
+        <!-- Blog item Start -->
+        <div class="blog-item-wrap">
+            <a data-lightbox="roadtrip" href="{{ post.image }}"><img alt="{{ post.title }}" src=
+                "{{ post.image }}"></a>
+        </div><!-- Blog item End --><br>
+        {{ post.full_text | safe }}
+
+        <div class="links">
+            <a class="facebook" href="#"><i class="ico-facebook-with-circle"></i> Share</a>
+            <a class="google-plus" href="#"><i class=" ico-google-with-circle"></i> Google+</a>
+        </div>
+    </article><!-- Blog Article End-->
+    <!-- Blog Article Start -->
+    <article>
+        <div class="author">
+            <div class="author-img"><img alt="" src=
+                "{{ user.user_image_url }}"></div>
+            <div class="author-content">
+                <h4>Author: {{ user.display_name }}</h4>
+                <p>Email: {{ user.user_email }}</p>
+                <p>Status: {{ user.user_status }}</p>
+            </div>
+        </div>
+    </article><!-- Blog Article End -->
+{% endblock %}
