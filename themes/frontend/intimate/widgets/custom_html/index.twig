@@ -1,0 +1,9 @@
+<div class="entry-widget">
+    {% if widget.title %}
+        <h5 class="widget-title">{{ widget.title }}</h5>
+    {% endif %}
+    <div>
+        {{ widget.content | safe }}
+    </div>
+</div>
+
