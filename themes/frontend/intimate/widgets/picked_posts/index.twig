@@ -1,4 +1,4 @@
-<div class="recent_post entry-widget">
+<div class="picked_post entry-widget">
     <h5 class="widget-title">{{ widget.title }}</h5>
 
     <div>
@@ -14,7 +14,7 @@
                     <div class="widget-content">
                         <a href="/blog/posts/{{ post.id }}/{{ post.alias }}">{{ post.title }}</a>
                         <div class="meta">
-                            <span><i class="ico-calendar-alt-fill"></i>{{ post.published_at | moment }}</span>
+                            <span><i class="ico-calendar-alt-fill"></i>{{ post.published_at | moment('LL') }}</span>
                             <span><i class="ico-tag"></i>Technology</span>
                         </div>
                     </div>
