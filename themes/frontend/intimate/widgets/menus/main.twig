@@ -1,0 +1,45 @@
+{% macro render_child(mn, menu_data ,isSubMenus) %}
+    {% if mn.children.length > 0 %}
+        <li class="dropdown dropdown-toggle active">
+            <a href="{{ menu_data.link }}" data-toggle="dropdown">
+                {{ menu_data.name }}
+            </a>
+            <ul class="dropdown-menu">
+                {% for subMn in mn.children %}
+                    {% set _data = subMn.id|get_menu_data(menuItems) %}
+                    {{ render_child(subMn, _data,true) }}
+                {% endfor %}
+            </ul>
+        </li>
+    {% else %}
+        <li>
+            <a href="{{ menu_data.link }}">
+                {{ menu_data.name }}
+            </a>
+        </li>
+    {% endif %}
+{% endmacro %}
+
+{% if widget.search == 1 %}
+    <!-- Stat Search -->
+    <div class="side">
+        <a class="show-search"><i class="ico-search"></i></a>
+    </div><!-- Form for navbar search area -->
+    <form class="full-search" method="get" action="/blog/posts/search">
+        <div class="container">
+            <div class="row">
+                <input class="form-control" placeholder="Search" name="searchStr" type="text">
+                <a class="close-search"><span class="ico-times"></span></a>
+            </div>
+        </div>
+    </form><!-- Search form ends -->
+{% endif %}
+
+<div class="navbar-collapse collapse" id="navigation">
+    <ul class="nav navbar-nav navbar-right">
+        {% for mn in menuOrder %}
+            {% set menu_data = mn.id|get_menu_data(menuItems) %}
+            {{ render_child(mn, menu_data,false) }}
+        {% endfor %}
+    </ul>
+</div>

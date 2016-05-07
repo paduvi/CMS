@@ -1,0 +1,26 @@
+<div class="recent_post entry-widget">
+    <h5 class="widget-title">{{ widget.title }}</h5>
+
+    <div class="tab-pane active" id="tab1">
+        <ul class="posts-list">
+            {% for post in posts %}
+                <li>
+                    <div class="widget-thumb">
+                        <a href="/blog/{{ post.id }}/{{ post.alias }}">
+                            <img alt="{{ post.title }}"
+                                 src="{% if post.image %}{{ post.image }}{% else %}/img/noImage.png"{% endif %}
+                                 style="max-width: 70px"></a>
+                    </div>
+                    <div class="widget-content">
+                        <a href="/blog/posts/{{ post.id }}/{{ post.alias }}">{{ post.title }}</a>
+                        <div class="meta">
+                            <span><i class="ico-calendar-alt-fill"></i>{{ post.published_at | moment }}</span>
+                            <span><i class="ico-tag"></i>Technology</span>
+                        </div>
+                    </div>
+                    <div class="clearfix"></div>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
